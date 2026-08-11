@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta Flame */
+  --color-flame-50: #fff5f2;
+  --color-flame-100: #ffe8e1;
+  --color-flame-200: #ffd0c3;
+  --color-flame-300: #ffab95;
+  --color-flame-400: #ff7758;
+  --color-flame-500: #f94d26;
+  --color-flame-600: #e5330d;
+  --color-flame-700: #c12306;
+  --color-flame-800: #a0200a;
+  --color-flame-900: #83200f;
+
+  /* Paleta Ink */
+  --color-ink-50: #f6f6f7;
+  --color-ink-100: #e7e7eb;
+  --color-ink-200: #d0d0d8;
+  --color-ink-300: #adadb9;
+  --color-ink-400: #848395;
+  --color-ink-500: #666577;
+  --color-ink-600: #515061;
+  --color-ink-700: #434250;
+  --color-ink-800: #3a3943;
+  --color-ink-900: #33323a;
+  --color-ink-950: #1d1c22;
+
+  /* Paleta Sand */
+  --color-sand-50: #fbfaf8;
+  --color-sand-100: #f6f3ee;
+
+  /* Estados */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-700: #15803d;
+
+  --color-error-50: #fef2f2;
+  --color-error-700: #b91c1c;
+}
+
+/* Reglas y Utilidades Personalizadas */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #ffffff;
+    color: var(--color-ink-700);
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+.container-page {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-flame-600);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-flame-700);
+}
+
+.btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink-200);
+  background-color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink-700);
+  transition: all 0.2s;
+}
+
+.btn-secundario:hover {
+  background-color: var(--color-flame-50);
+  color: var(--color-flame-700);
+  border-color: var(--color-flame-300);
+}
+
+.campo-form {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-ink-200);
+  background-color: #ffffff;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-ink-900);
+  transition: border-color 0.2s;
+}
+
+.campo-form:focus {
+  outline: none;
+  border-color: var(--color-flame-500);
+}
