@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Flame, Menu, X } from 'lucide-react'; // Agregado 'X'
+import {  Menu, X } from 'lucide-react'; // Agregado 'X'
 import { useState } from 'react';
-import logo from '../assets/Logo.png';
+import Logo from '../assets/Logo.png';
 
 const enlaces = [
   { to: '/', label: 'Inicio' },
@@ -19,7 +19,7 @@ export function Navbar() {
         <Link to="/" className="flex items-center gap-2" onClick={() => setAbierto(false)}>
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden">
             <img 
-              src={logo} 
+              src={Logo} 
               alt="Logo" 
               className="h-16 max-w-none scale-150 object-contain mix-blend-multiply" 
             />
@@ -97,7 +97,7 @@ export function Footer() {
             <div className="flex items-center gap-2">
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden">
             <img 
-              src={logo} 
+              src={Logo} 
               alt="Logo" 
               className="h-16 max-w-none scale-150 object-contain mix-blend-multiply" 
             />
