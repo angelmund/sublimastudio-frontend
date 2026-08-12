@@ -3,8 +3,9 @@ export interface Categoria {
   nombre: string;
   slug: string;
   descripcion?: string;
-  imagen_url?: string;
+  imagen?: string;
   disponible?: boolean;
+  activo?: boolean;
 }
 
 export interface ProductoConCategoria {
@@ -17,7 +18,7 @@ export interface ProductoConCategoria {
   precio_oferta?: number | null;
   precio_final: number;
   stock: number;
-  imagen_url?: string;
+  imagen?: string;
   disponible: boolean;
   material?: string;
   medidas?: string;
@@ -26,5 +27,5 @@ export interface ProductoConCategoria {
   atributos?: any[];
 }
 
-
+// Exportamos también Producto para componer componentes antiguos
 export type Producto = ProductoConCategoria;

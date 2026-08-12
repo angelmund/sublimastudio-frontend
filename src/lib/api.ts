@@ -27,7 +27,7 @@ function normalizarProducto(p: any): ProductoConCategoria {
     stock: parseInt(p.stock, 10) || 0,
     
     // Media & Estado
-    imagen_url: p.imagen ? (p.imagen.startsWith('http') ? p.imagen : `${API_URL}${p.imagen}`) : undefined,
+    imagen: p.imagen ? (p.imagen.startsWith('http') ? p.imagen : `${API_URL}${p.imagen}`) : undefined,
     disponible: p.activo,
     
     // Atributos dinámicos extraídos
@@ -63,7 +63,7 @@ export async function getCategorias(): Promise<Categoria[]> {
     slug: c.id.toString(),
     descripcion: c.descripcion,
     disponible: c.activo ?? true,
-    imagen_url: c.imagen
+    imagen: c.imagen
       ? c.imagen.startsWith('http')
         ? c.imagen
         : `${API_URL}${c.imagen}`
@@ -144,7 +144,7 @@ export async function crearCategoria(formData: FormData): Promise<Categoria> {
     slug: c.id.toString(),
     descripcion: c.descripcion,
     disponible: c.activo,
-    imagen_url: c.imagen ? `${API_URL}${c.imagen}` : undefined,
+    imagen: c.imagen ? `${API_URL}${c.imagen}` : undefined,
   };
 }
 
@@ -164,7 +164,7 @@ export async function actualizarCategoria(
     slug: c.id.toString(),
     descripcion: c.descripcion,
     disponible: c.activo,
-    imagen_url: c.imagen ? `${API_URL}${c.imagen}` : undefined,
+    imagen: c.imagen ? `${API_URL}${c.imagen}` : undefined,
   };
 }
 

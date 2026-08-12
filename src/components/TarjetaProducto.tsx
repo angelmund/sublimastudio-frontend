@@ -53,7 +53,7 @@ export default function TarjetaProducto({ producto }: { producto: Producto }) {
         {/* Mostrar chips de atributos (Ej: Mágica, 11oz) */}
         {producto.atributos && producto.atributos.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {producto.atributos.map((at) => (
+            {producto.atributos.map((at: any) => (
               <span
                 key={at.id}
                 className="rounded-md bg-ink-50 px-2 py-0.5 text-[11px] font-medium text-ink-600 border border-ink-100"

@@ -54,7 +54,7 @@ export default function AdminProductos() {
       setCategoriaId(p.categoria?.id.toString() || '');
       setDescripcion(p.descripcion || '');
       setDisponible(p.disponible);
-      setPreviewImagen(p.imagen_url || null);
+      setPreviewImagen(p.imagen || null);
     } else {
       setProductoEditar(null);
       setNombre('');
@@ -177,8 +177,8 @@ export default function AdminProductos() {
               {productosFiltrados.map((p) => (
                 <tr key={p.id} className="hover:bg-ink-50/50 transition-colors">
                   <td className="px-6 py-4 font-medium text-ink-900 flex items-center gap-3">
-                    {p.imagen_url ? (
-                      <img src={p.imagen_url} alt={p.nombre} className="h-10 w-10 rounded-lg object-cover bg-ink-100" />
+                    {p.imagen ? (
+                      <img src={p.imagen} alt={p.nombre} className="h-10 w-10 rounded-lg object-cover bg-ink-100" />
                     ) : (
                       <div className="h-10 w-10 rounded-lg bg-ink-100 flex items-center justify-center text-ink-400">
                         <Package className="h-5 w-5" />

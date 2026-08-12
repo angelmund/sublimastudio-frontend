@@ -62,7 +62,7 @@ export default function AdminCategoria() {
       setNombre(c.nombre);
       setDescripcion(c.descripcion || '');
       setDisponible(c.disponible ?? true);
-      setPreviewImagen(c.imagen_url || null);
+      setPreviewImagen(c.imagen || null);
     } else {
       setCategoriaEditar(null);
       setNombre('');
@@ -182,9 +182,9 @@ export default function AdminCategoria() {
                     #{c.id}
                   </td>
                   <td className="px-6 py-4 font-medium text-ink-900 flex items-center gap-3">
-                    {c.imagen_url ? (
+                    {c.imagen ? (
                       <img
-                        src={c.imagen_url}
+                        src={c.imagen}
                         alt={c.nombre}
                         className="h-10 w-10 rounded-lg object-cover bg-ink-100 flex-none"
                       />

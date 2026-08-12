@@ -107,9 +107,9 @@ export default function ArticuloDetalle() {
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
         {/* Imagen */}
         <div className="relative overflow-hidden rounded-3xl border border-ink-100 bg-ink-50 shadow-sm">
-          {producto.imagen_url ? (
+          {producto.imagen ? (
             <img
-              src={producto.imagen_url}
+              src={producto.imagen}
               alt={producto.nombre}
               className="aspect-square w-full object-cover"
             />

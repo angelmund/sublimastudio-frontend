@@ -124,10 +124,10 @@ export default function Inicio() {
               <div className="relative group overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-md shadow-2xl transition-all duration-500">
                 {/* Badge de Categoría y Precio */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-ink-900">
-                  {productoActual.imagen_url ? (
+                  {productoActual.imagen ? (
                     <img
                       key={productoActual.id}
-                      src={productoActual.imagen_url}
+                      src={productoActual.imagen}
                       alt={productoActual.nombre}
                       className="h-full w-full object-cover transition-all duration-700 hover:scale-105"
                     />
@@ -263,9 +263,9 @@ export default function Inicio() {
                 to={`/articulos?categoria=${c.slug}`}
                 className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-ink-900 shadow-sm transition-all hover:shadow-xl"
               >
-                {c.imagen_url ? (
+                {c.imagen ? (
                   <img
-                    src={c.imagen_url}
+                    src={c.imagen}
                     alt={c.nombre}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
