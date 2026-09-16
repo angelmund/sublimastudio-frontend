@@ -8,11 +8,21 @@ import SobreNosotros from '@/pages/SobreNosotros';
 import Contacto from '@/pages/Contacto';
 import NoEncontrado from '@/pages/NoEncontrado';
 
+// Importación de autenticación y panel admin
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AdminLayout } from '@/components/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminProductos from '@/pages/admin/AdminProductos';
 import AdminCategoria from '@/pages/admin/AdminCategorias';
+import AdminUsuarios from '@/pages/admin/AdminUsuarios';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import VerifyEmail from '@/pages/email/VerifyEmail';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
+import ResetPassword from '@/pages/auth/ResetPassword';
 
-// Helper para reiniciar el scroll al cambiar de página
+import { AuthProvider } from '@/context/AuthContext';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -23,14 +33,13 @@ function ScrollToTop() {
   return null;
 }
 
-// Componente principal para el contenido de las rutas
 function AppContent() {
   const location = useLocation();
-  const esAdmin = location.pathname.startsWith('/admin');
+  const esVistaLimpia = location.pathname.startsWith('/admin') || location.pathname === '/login';
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-ink-900 font-sans antialiased">
-      {!esAdmin && <Navbar />}
+    <div className="flex min-h-screen flex-col bg-white text-slate-900 font-sans antialiased">
+      {!esVistaLimpia && <Navbar />}
       <main className="flex-1">
         <Routes>
           {/* Rutas Públicas */}
@@ -39,32 +48,42 @@ function AppContent() {
           <Route path="/articulo/:slug" element={<ArticuloDetalle />} />
           <Route path="/sobre-nosotros" element={<SobreNosotros />} />
           <Route path="/contacto" element={<Contacto />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
-          {/* Rutas Administrativas */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminProductos />} />
-            <Route path="productos" element={<AdminProductos />} />
-            <Route path="categorias" element={<AdminCategoria />} />
-            <Route
-              path="pedidos"
-              element={<div className="p-6 text-xl font-bold">Módulo de Pedidos (Próximamente)</div>}
-            />
+          {/* Rutas Administrativas Protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="productos" element={<AdminProductos />} />
+              <Route path="categorias" element={<AdminCategoria />} />
+              <Route path="usuarios" element={<AdminUsuarios />} />
+              <Route
+                path="pedidos"
+                element={<div className="p-6 text-xl font-bold text-slate-800">Módulo de Pedidos (Próximamente)</div>}
+              />
+            </Route>
           </Route>
 
           {/* Ruta 404 */}
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </main>
-      {!esAdmin && <Footer />}
+      {!esVistaLimpia && <Footer />}
     </div>
   );
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <AppContent />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
