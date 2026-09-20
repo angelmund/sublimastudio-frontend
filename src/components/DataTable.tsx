@@ -60,7 +60,7 @@ export default function DataTable<T>({
     a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-sm mr-7 ml-5">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-ink-700">
           <thead className="border-b border-ink-100 bg-ink-50/50 text-xs font-semibold uppercase tracking-wider text-ink-500">

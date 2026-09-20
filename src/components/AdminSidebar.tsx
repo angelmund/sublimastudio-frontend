@@ -103,7 +103,7 @@ export function AdminSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:inline-flex"
+              className="hidden rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:inline-flex cursor-pointer"
               aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
               title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
             >

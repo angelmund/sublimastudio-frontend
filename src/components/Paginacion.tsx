@@ -66,10 +66,10 @@ export default function Paginacion({
                 type="button"
                 onClick={() => onPage(p)}
                 aria-current={p === page ? 'page' : undefined}
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   p === page
-                    ? 'bg-slate-900 text-white'
-                    : 'text-ink-700 hover:bg-ink-100'
+                    ? 'bg-flame-600 text-white'
+                    : 'text-white bg-zinc-600 hover:bg-flame-600'
                 }`}
               >
                 {p}
