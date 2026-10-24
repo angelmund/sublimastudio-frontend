@@ -1,18 +1,22 @@
 import { Link } from 'react-router-dom';
 import type { Producto } from '@/types/catalogo';
 
-function formatearPrecio(precioStr: string): string {
-  const numero = parseFloat(precioStr) || 0;
+// Ajustado para aceptar números directamente (ya que nuestro normalizador devuelve floats)
+function formatearPrecio(precio: string | number): string {
+  const numero = typeof precio === 'string' ? parseFloat(precio) : precio;
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN',
-  }).format(numero);
+  }).format(numero || 0);
 }
 
-export default function TarjetaProducto({ producto }: { producto: Producto }) {
+export default function TarjetaProducto({ producto }: { producto: any }) {
+  // Evaluamos de forma segura si el producto está activo (soporta 1, true, o la variable disponible)
+  const estaDisponible = producto.activo === 1 || producto.activo === true || producto.disponible === true;
+
   return (
     <Link
-      to={`/articulo/${producto.id}`}
+      to={`/articulo/${producto.slug || producto.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-ink-50">
@@ -28,8 +32,14 @@ export default function TarjetaProducto({ producto }: { producto: Producto }) {
             Sin imagen disponible
           </div>
         )}
+        
+        {/* Renderizado condicional de las etiquetas */}
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          {!producto.activo && (
+          {estaDisponible ? (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 shadow-sm border border-emerald-200">
+              Disponible
+            </span>
+          ) : (
             <span className="rounded-full bg-ink-700 px-2.5 py-0.5 text-xs font-semibold text-white shadow-sm">
               Agotado
             </span>
@@ -38,9 +48,9 @@ export default function TarjetaProducto({ producto }: { producto: Producto }) {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        {producto.categoria_nombre && (
+        {(producto.categoria?.nombre || producto.categoria_nombre) && (
           <span className="text-xs font-medium uppercase tracking-wide text-flame-600">
-            {producto.categoria_nombre}
+            {producto.categoria?.nombre || producto.categoria_nombre}
           </span>
         )}
         <h3 className="mt-1 line-clamp-2 text-base font-semibold text-ink-900 group-hover:text-flame-700">
@@ -66,7 +76,7 @@ export default function TarjetaProducto({ producto }: { producto: Producto }) {
 
         <div className="mt-auto flex items-baseline gap-2 pt-3">
           <span className="text-lg font-bold text-ink-900">
-            {formatearPrecio(producto.precio_base)}
+            {formatearPrecio(producto.precio_final || producto.precio || 0)}
           </span>
         </div>
       </div>

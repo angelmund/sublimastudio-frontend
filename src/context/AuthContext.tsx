@@ -1,57 +1,58 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { API_URL } from '../lib/api/client';
+import api from '@/lib/api/client';
+import { logout } from '@/lib/api/auth';
 
+// 1. Agregamos logoutUser a la interfaz
 interface AuthContextType {
-  accessToken: string | null;
-  setAccessToken: (token: string | null) => void;
+  user: any | null;
+  isAuthenticated: boolean;
   loading: boolean;
+  checkAuth: () => Promise<void>;
   logoutUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function silenciosoRefresco() {
-      try {
-        const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
-          method: 'POST',
-          credentials: 'include', // Envía la cookie HTTP-Only a Django
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setAccessToken(data.access);
-        } else {
-          setAccessToken(null);
-        }
-      } catch {
-        setAccessToken(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    silenciosoRefresco();
-  }, []);
-
-  const logoutUser = async () => {
+  const checkAuth = async () => {
     try {
-      await fetch(`${API_URL}/api/auth/logout/`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const { data } = await api.get('/api/user');
+      setUser(data);
+    } catch (error) {
+      setUser(null);
     } finally {
-      setAccessToken(null);
-      window.location.href = '/login';
+      setLoading(false);
     }
   };
 
+  // 2. Metemos la función DENTRO del AuthProvider
+  const logoutUser = async () => {
+    try {
+      await logout(); 
+    } catch (error) {
+      console.error("Error al cerrar sesión en el servidor", error);
+    } finally {
+      setUser(null); // Esto automáticamente hará que isAuthenticated sea false
+      window.location.href = '/login'; 
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ accessToken, setAccessToken, loading, logoutUser }}>
+    // 3. Exponemos logoutUser en el Provider
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      loading, 
+      checkAuth,
+      logoutUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -59,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
   return context;
 };

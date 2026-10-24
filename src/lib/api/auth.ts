@@ -1,103 +1,71 @@
-import { API_URL } from './client';
+import api from './client';
 
 export interface RegisterData {
-  username: string;
+  name: string; 
   email: string;
   password: string;
-  password_confirm: string;
+  password_confirmation: string; 
 }
 
-export async function login(username: string, password: string): Promise<{ access: string }> {
-  const res = await fetch(`${API_URL}/api/auth/token/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-    credentials: 'include', // Envía la cookie HTTP-Only para el refresh token
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.detail || 'Credenciales inválidas');
-  }
-
-  // Retornamos únicamente el access token (se guardará en el AuthContext en memoria)
-  return data;
+// ==========================================
+// 1. INICIO Y CIERRE DE SESIÓN
+// ==========================================
+export async function login(email: string, password: string): Promise<any> {
+  await api.get('/sanctum/csrf-cookie');
+  const res = await api.post('/login', { email, password });
+  return res.data;
 }
 
 export async function logout(): Promise<void> {
-  await fetch(`${API_URL}/api/auth/logout/`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  await api.post('/logout');
 }
 
+// ==========================================
+// 2. REGISTRO DE USUARIO
+// ==========================================
 export async function register(data: RegisterData): Promise<any> {
-  const res = await fetch(`${API_URL}/api/auth/register/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  const resData = await res.json();
-
-  if (!res.ok) {
-    let errorMessage = 'Error al registrar la cuenta.';
-    if (typeof resData === 'object' && resData !== null) {
-      const messages = Object.entries(resData)
-        .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(' ') : errs}`)
-        .join(' | ');
-      if (messages) errorMessage = messages;
-    }
-    throw new Error(errorMessage);
-  }
-
-  return resData;
+  await api.get('/sanctum/csrf-cookie');
+  const res = await api.post('/register', data);
+  return res.data;
 }
 
-export async function verifyEmail(uid: string, token: string): Promise<any> {
-  const res = await fetch(`${API_URL}/api/auth/verify-email/${uid}/${token}/`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
+// ==========================================
+// 3. VERIFICACIÓN DE CORREO (MAILTRAP)
+// ==========================================
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || data.detail || 'Error al verificar el correo.');
-  }
-
-  return data;
+// Para cuando el usuario pide que le vuelvan a enviar el correo de verificación
+export async function resendVerificationEmail(): Promise<any> {
+  await api.get('/sanctum/csrf-cookie');
+  const res = await api.post('/email/verification-notification');
+  return res.data;
 }
 
+// Para validar el enlace que el usuario recibe en su correo
+// Recibe la URL relativa firmada (ej: /verify-email/1/aBcD123?expires=...&signature=...)
+export async function verifyEmail(signedUrl: string): Promise<any> {
+  const res = await api.get(signedUrl);
+  return res.data;
+}
+
+// ==========================================
+// 4. RECUPERACIÓN DE CONTRASEÑA
+// ==========================================
+
+// Paso 1: Enviar correo de recuperación
 export async function requestPasswordReset(email: string): Promise<any> {
-  const res = await fetch(`${API_URL}/api/auth/password-reset/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || data.detail || 'Error al solicitar el cambio de contraseña.');
-  }
-
-  return data;
+  await api.get('/sanctum/csrf-cookie');
+  const res = await api.post('/forgot-password', { email }); 
+  return res.data;
 }
 
-export async function confirmPasswordReset(uid: string, token: string, password: string): Promise<any> {
-  const res = await fetch(`${API_URL}/api/auth/password-reset-confirm/${uid}/${token}/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || data.detail || 'Error al restablecer la contraseña.');
-  }
-
-  return data;
+// Paso 2: Cambiar la contraseña usando el token del correo
+export async function confirmPasswordReset(data: {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<any> {
+  await api.get('/sanctum/csrf-cookie');
+  const res = await api.post('/reset-password', data);
+  return res.data;
 }

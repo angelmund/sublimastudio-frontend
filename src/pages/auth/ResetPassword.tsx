@@ -1,38 +1,64 @@
 import { useState, FormEvent } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { confirmPasswordReset } from '@/lib/api/auth';
+import { useToast } from '@/context/ToastContext';
+import axios from 'axios';
 
 export default function ResetPassword() {
-  const { uid, token } = useParams<{ uid: string; token: string }>();
+  const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get('email');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validaciones disparando Toasts
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      showToast('Las contraseñas no coinciden.', 'error');
       return;
     }
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+      showToast('La contraseña debe tener al menos 8 caracteres.', 'error');
+      return;
+    }
+    if (!email || !token) {
+      showToast('Enlace inválido o expirado. Vuelve a solicitar la recuperación.', 'error');
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
-      if (uid && token) {
-        await confirmPasswordReset(uid, token, password);
-        setSuccess(true);
-        setTimeout(() => navigate('/login'), 3000);
-      }
+      await confirmPasswordReset({
+        token,
+        email,
+        password,
+        password_confirmation: confirmPassword
+      });
+      
+      setSuccess(true);
+      showToast('¡Contraseña actualizada con éxito!', 'success');
+      setTimeout(() => navigate('/login'), 3000);
+      
     } catch (err: any) {
-      setError(err.message);
+      if (axios.isAxiosError(err) && err.response?.data?.errors) {
+         // Atrapamos errores de validación de Laravel (ej. la contraseña es débil)
+         const primerError = Object.values(err.response.data.errors)[0] as string[];
+         showToast(primerError[0], 'error');
+      } else if (axios.isAxiosError(err) && err.response?.data?.message) {
+         // Errores generales de Laravel (ej. Token inválido)
+         showToast(err.response.data.message, 'error');
+      } else {
+         showToast('Ocurrió un error al restablecer la contraseña.', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,19 +66,20 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-slate-200/80 text-center">
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-2">Nueva Contraseña</h1>
-        <p className="text-sm text-slate-500 mb-6">Ingresa tu nueva contraseña para continuar.</p>
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl border border-slate-200/80">
+        <h1 className="mb-2 text-2xl font-black tracking-tight text-slate-900">Nueva Contraseña</h1>
+        <p className="mb-6 text-sm text-slate-500">
+          Ingresa tu nueva contraseña para <span className="font-semibold text-slate-700">{email}</span>.
+        </p>
 
         {success ? (
-          <div className="rounded-lg bg-emerald-50 p-4 text-sm font-medium text-emerald-700 border border-emerald-200">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
             ¡Contraseña actualizada con éxito! Redirigiendo al login...
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">{error}</div>}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Nueva Contraseña</label>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Nueva Contraseña</label>
               <input
                 type="password"
                 required
@@ -63,7 +90,7 @@ export default function ResetPassword() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Confirmar Contraseña</label>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-600">Confirmar Contraseña</label>
               <input
                 type="password"
                 required
@@ -76,7 +103,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white shadow hover:bg-slate-800 disabled:opacity-50"
+              className="w-full cursor-pointer rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white shadow hover:bg-slate-800 disabled:opacity-50"
             >
               {loading ? 'Guardando...' : 'Restablecer contraseña'}
             </button>

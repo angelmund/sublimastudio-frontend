@@ -7,6 +7,7 @@ import { ReactNode } from 'react';
 export type CardColor =
   | 'slate'
   | 'blue'
+  | 'green'
   | 'indigo'
   | 'violet'
   | 'fuchsia'
@@ -71,6 +72,17 @@ const colorStyles: Record<CardColor, ColorStyle> = {
     valueText: 'text-blue-900',
     hintText: 'text-blue-600',
     accent: 'bg-blue-500',
+  },
+  green: {
+    cardBg: 'bg-green-50',
+    cardBorder: 'border-green-200',
+    hoverBorder: 'hover:border-green-400',
+    iconBg: 'bg-green-500 text-white',
+    iconRing: 'group-hover:ring-green-200',
+    labelText: 'text-green-700',
+    valueText: 'text-green-900',
+    hintText: 'text-green-600',
+    accent: 'bg-green-500',
   },
   indigo: {
     cardBg: 'bg-indigo-50',

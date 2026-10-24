@@ -1,18 +1,31 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
-export const ProtectedRoute = () => {
-const { accessToken, loading } = useAuth();
+export function ProtectedRoute({ requiereAdmin = false }: { requiereAdmin?: boolean }) {
+  const { user, isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-  // Esperar a que el AuthContext termine de intentar refrescar sesión
   if (loading) {
-    return <div className="p-8 text-center text-ink-500">Verificando sesión...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-slate-900" />
+      </div>
+    );
   }
 
-  // Si no hay token de acceso en memoria (después de logout o sin iniciar sesión), expulsar a /login
-  if (!accessToken) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  // Si la ruta exige ser admin, revisamos los roles de Spatie
+  if (requiereAdmin) {
+    const esAdmin = user?.roles?.some((rol: any) => rol.name === 'admin');
+    if (!esAdmin) {
+      // Si es un cliente intentando entrar al admin, lo pateamos al inicio
+      return <Navigate to="/" replace />;
+    }
+  }
+
   return <Outlet />;
-};
+}

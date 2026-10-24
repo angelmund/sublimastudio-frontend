@@ -1,4 +1,4 @@
-import { API_URL, fetchWithAuth } from './client';
+import api from './client';
 
 export interface DashboardStats {
   total_productos: number;
@@ -18,24 +18,19 @@ export interface UsuarioAdmin {
   date_joined: string;
 }
 
-export async function getDashboardStats(token?: string | null): Promise<DashboardStats> {
-  const res = await fetchWithAuth('/api/auth/dashboard-stats/', {}, token);
-  if (!res.ok) throw new Error('Error al cargar métricas del dashboard');
-  return await res.json();
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const { data } = await api.get('/api/v1/admin/dashboard-stats');
+  return data;
 }
 
-export async function getUsuariosAdmin(token?: string | null): Promise<UsuarioAdmin[]> {
-  const res = await fetchWithAuth('/api/auth/gestion-usuarios/', {}, token);
-  if (!res.ok) throw new Error('Error al obtener lista de usuarios');
-  return await res.json();
+export async function getUsuariosAdmin(): Promise<UsuarioAdmin[]> {
+  const { data } = await api.get('/api/v1/admin/usuarios');
+  return data;
 }
 
-export async function toggleUserRole(id: number, is_staff: boolean, token?: string | null): Promise<UsuarioAdmin> {
-  const res = await fetchWithAuth(`/api/auth/gestion-usuarios/${id}/`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ is_staff }),
-  }, token);
-  if (!res.ok) throw new Error('Error al actualizar rol de usuario');
-  return await res.json();
+export async function toggleUserRole(id: number, is_staff: boolean): Promise<UsuarioAdmin> {
+  const { data } = await api.patch(`/api/v1/admin/usuarios/${id}/role`, { 
+    is_staff 
+  });
+  return data;
 }

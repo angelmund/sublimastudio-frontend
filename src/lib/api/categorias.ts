@@ -1,20 +1,21 @@
-import { API_URL, fetchWithAuth } from './client';
+import api from './client'; // Tu nueva instancia de Axios
 import type { Categoria } from '@/types/catalogo';
 
+// ==========================================
+// RUTAS PÚBLICAS (No requieren autenticación)
+// ==========================================
 export async function getCategorias(): Promise<Categoria[]> {
-  const res = await fetch(`${API_URL}/api/catalogo/categorias/`);
-  if (!res.ok) throw new Error('No se pudieron cargar las categorías.');
-  const data = await res.json();
+  const { data } = await api.get('/api/v1/categorias');
+  
   return data.map((c: any) => ({
     id: c.id,
     nombre: c.nombre,
-    slug: c.id.toString(),
+    // Ahora toma el slug real de la BD, y solo usa el ID si ocurriera un error
+    slug: c.slug || c.id.toString(), 
     descripcion: c.descripcion,
     disponible: c.activo ?? true,
-    imagen: c.imagen
-      ? c.imagen.startsWith('http')
-        ? c.imagen
-        : `${API_URL}${c.imagen}`
+    imagen: c.imagen 
+      ? (c.imagen.startsWith('http') ? c.imagen : `${api.defaults.baseURL}${c.imagen}`) 
       : undefined,
   }));
 }
@@ -24,56 +25,29 @@ export async function getCategoriasDestacadas(): Promise<Categoria[]> {
   return categorias.slice(0, 4);
 }
 
-export async function crearCategoria(formData: FormData, token?: string | null): Promise<Categoria> {
-  const res = await fetchWithAuth('/api/catalogo/categorias/', {
-    method: 'POST',
-    body: formData,
-  }, token);
-  
-  if (!res.ok) throw new Error('Error al crear la categoría.');
-  const c = await res.json();
-  return {
-    id: c.id,
-    nombre: c.nombre,
-    slug: c.id.toString(),
-    descripcion: c.descripcion,
-    disponible: c.activo,
-    imagen: c.imagen ? `${API_URL}${c.imagen}` : undefined,
-  };
+// ==========================================
+// RUTAS ADMIN (Protegidas automáticamente por Sanctum/Breeze)
+// ==========================================
+export async function crearCategoria(formData: FormData): Promise<Categoria> {
+  // Axios envía la cookie de sesión y el token CSRF automáticamente
+  const { data } = await api.post('/api/v1/admin/categorias', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
 }
 
 export async function actualizarCategoria(id: number, formData: FormData): Promise<Categoria> {
-  const res = await fetchWithAuth(`/api/catalogo/categorias/${id}/`, {
-    method: 'PATCH',
-    body: formData,
+  // Para Laravel, cuando envías FormData (archivos) en actualización, 
+  // a veces es mejor usar POST y agregar el _method: 'PATCH' dentro del formData.
+  const { data } = await api.post(`/api/v1/admin/categorias/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
-  if (!res.ok) throw new Error('Error al actualizar la categoría.');
-  const c = await res.json();
-  return {
-    id: c.id,
-    nombre: c.nombre,
-    slug: c.id.toString(),
-    descripcion: c.descripcion,
-    disponible: c.activo,
-    imagen: c.imagen ? `${API_URL}${c.imagen}` : undefined,
-  };
+  return data;
 }
 
 export async function eliminarCategoria(id: number): Promise<boolean> {
-  const res = await fetchWithAuth(`/api/catalogo/categorias/${id}/`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Error al eliminar la categoría.');
-  return true;
-}
-
-export async function enviarMensaje(datos: {
-  nombre: string;
-  email: string;
-  asunto: string | null;
-  mensaje: string;
-}): Promise<boolean> {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  console.log('Mensaje enviado:', datos);
+  await api.delete(`/api/v1/admin/categorias/${id}`);
   return true;
 }

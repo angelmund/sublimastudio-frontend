@@ -5,6 +5,7 @@ import { getCategorias, getProductos } from '@/lib/api';
 import type { Categoria, ProductoConCategoria } from '@/types/catalogo';
 import TarjetaProducto from '@/components/TarjetaProducto';
 import { Cargando, ErrorEstado, Vacio } from '@/components/Estados';
+import axios from 'axios';
 
 type Orden = 'recientes' | 'precio-asc' | 'precio-desc' | 'nombre';
 
@@ -34,7 +35,11 @@ export default function Articulos() {
         setProductos(prods);
       } catch (e) {
         if (!activo) return;
-        setError(e instanceof Error ? e.message : 'No se pudo cargar el catálogo.');
+        if (axios.isAxiosError(e) && e.response) {
+          setError(e.response.data?.message || 'Error de conexión con el servidor.');
+        } else {
+          setError(e instanceof Error ? e.message : 'No se pudo cargar la información.');
+        }
       } finally {
         if (activo) setCargando(false);
       }
@@ -69,12 +74,12 @@ export default function Articulos() {
           (p.material?.toLowerCase().includes(q) ?? false)
       );
     }
-    switch (orden) {
+   switch (orden) {
       case 'precio-asc':
-        lista.sort((a, b) => (a.precio_oferta ?? a.precio_base) - (b.precio_oferta ?? b.precio));
+        lista.sort((a, b) => a.precio_final - b.precio_final);
         break;
       case 'precio-desc':
-        lista.sort((a, b) => (b.precio_oferta ?? b.precio) - (a.precio_oferta ?? a.precio));
+        lista.sort((a, b) => b.precio_final - a.precio_final);
         break;
       case 'nombre':
         lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -159,15 +164,15 @@ export default function Articulos() {
       </p>
 
       {/* Barra de herramientas */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" />
+          <Search className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" />
           <input
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, material…"
-            className="campo-form pl-10"
+            placeholder="Buscar por nombre, descripción o material..."
+            className="campo-form !pl-11" 
           />
         </div>
         <div className="flex items-center gap-2">

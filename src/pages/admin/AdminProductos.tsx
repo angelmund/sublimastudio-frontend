@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { Plus, Edit2, Trash2, Check, X, Package } from 'lucide-react';
 import {
-  getProductos,
+  getAdminProductos,
   getCategorias,
   crearProducto,
   actualizarProducto,
   eliminarProducto,
 } from '@/lib/api';
+import axios from 'axios';
 import type { ProductoConCategoria, Categoria } from '@/types/catalogo';
 import DataTable, { type Column } from '@/components/DataTable';
 import PageHeader from '@/components/PageHeader';
@@ -19,15 +20,17 @@ import Textarea from '@/components/ui/Textarea';
 import FormModal from '@/components/ui/FormModal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ImageUpload from '@/components/ui/ImageUpload';
-
+import { useToast } from '@/context/ToastContext';
 export default function AdminProductos() {
   // ---------- Data ----------
-  const [productos, setProductos] = useState<ProductoConCategoria[]>([]);
+const [productos, setProductos] = useState<ProductoConCategoria[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
-
+  const { showToast } = useToast();
+  const [erroresForm, setErroresForm] = useState<Record<string, string>>({});
+  
   // ---------- Modal form ----------
   const [modalAbierto, setModalAbierto] = useState(false);
   const [productoEditar, setProductoEditar] = useState<ProductoConCategoria | null>(null);
@@ -54,7 +57,7 @@ export default function AdminProductos() {
     try {
       setCargando(true);
       setError(null);
-      const [prods, cats] = await Promise.all([getProductos(), getCategorias()]);
+      const [prods, cats] = await Promise.all([getAdminProductos(), getCategorias()]);
       setProductos(prods);
       setCategorias(cats);
     } catch (e) {
@@ -65,6 +68,7 @@ export default function AdminProductos() {
   }
 
   function abrirModal(p?: ProductoConCategoria) {
+    setErroresForm({});
     if (p) {
       setProductoEditar(p);
       setNombre(p.nombre);
@@ -99,29 +103,47 @@ export default function AdminProductos() {
     }
 
     try {
-      setGuardando(true);
-      const formData = new FormData();
-      formData.append('nombre', nombre.trim());
-      formData.append('precio_base', precio);
-      formData.append('categoria', categoriaId);
-      formData.append('descripcion', descripcion.trim());
-      formData.append('activo', disponible ? 'true' : 'false');
+  setGuardando(true);
+  setErroresForm({}); // Limpiamos errores antes de enviar
+  
+  const formData = new FormData();
+  formData.append('nombre', nombre.trim());
+  formData.append('precio_base', precio);
+  formData.append('categoria', categoriaId);
+  formData.append('descripcion', descripcion.trim());
+  formData.append('activo', disponible ? 'true' : 'false');
 
-      if (archivoImagen) formData.append('imagen_muestra', archivoImagen);
+  if (archivoImagen) formData.append('imagen_muestra', archivoImagen);
 
-      if (productoEditar) {
-        await actualizarProducto(productoEditar.id, formData);
-      } else {
-        await crearProducto(formData);
-      }
+  if (productoEditar) {
+    await actualizarProducto(productoEditar.id, formData);
+    showToast('Producto actualizado correctamente', 'success');
+  } else {
+    await crearProducto(formData);
+    showToast('Producto creado con éxito', 'success');
+  }
 
-      setModalAbierto(false);
-      await cargarDatos();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al guardar el producto');
-    } finally {
-      setGuardando(false);
+  setModalAbierto(false);
+  await cargarDatos();
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 422) {
+      // Laravel devuelve los errores en err.response.data.errors
+      const erroresLaravel = err.response.data.errors;
+      const nuevosErrores: Record<string, string> = {};
+
+      // Extraemos el primer mensaje de cada campo
+      Object.keys(erroresLaravel).forEach((campo) => {
+        nuevosErrores[campo] = erroresLaravel[campo][0];
+      });
+
+      setErroresForm(nuevosErrores);
+      showToast('Por favor corrige los errores resaltados en rojo.', 'error');
+    } else {
+      showToast(err instanceof Error ? err.message : 'Error al guardar el producto', 'error');
     }
+  } finally {
+    setGuardando(false);
+  }
   }
 
   async function confirmarEliminar() {
@@ -267,58 +289,63 @@ export default function AdminProductos() {
         submitting={guardando}
         submitLabel={productoEditar ? 'Guardar cambios' : 'Crear producto'}
       >
-        <ImageUpload
-          label="Imagen de Muestra"
-          previewUrl={previewImagen}
-          fileName={archivoImagen?.name}
-          onSelect={handleSelectImagen}
+      <ImageUpload
+        label="Imagen de Muestra"
+        previewUrl={previewImagen}
+        fileName={archivoImagen?.name}
+        onSelect={handleSelectImagen}
+      />
+      {/* Mostrar error de imagen debajo si existe */}
+      {erroresForm.imagen_muestra && (
+        <p className="mt-1 text-xs font-medium text-red-600">{erroresForm.imagen_muestra}</p>
+      )}
+
+      <Field label="Nombre" required error={erroresForm.nombre}>
+        <Input
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Ej. Taza Mágica 11oz"
+          invalid={!!erroresForm.nombre} // true si hay error
         />
+      </Field>
 
-        <Field label="Nombre" required>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Precio Base (MXN)" required error={erroresForm.precio_base}>
           <Input
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder="Ej. Taza Mágica 11oz"
-            required
+            type="number"
+            step="0.01"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            placeholder="0.00"
+            invalid={!!erroresForm.precio_base}
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Precio Base (MXN)" required>
-            <Input
-              type="number"
-              step="0.01"
-              value={precio}
-              onChange={(e) => setPrecio(e.target.value)}
-              placeholder="0.00"
-              required
-            />
-          </Field>
-
-          <Field label="Categoría" required>
-            <Select
-              value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
-              required
-            >
-              <option value="">Selecciona...</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-
-        <Field label="Descripción">
-          <Textarea
-            rows={3}
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Detalles del artículo..."
-          />
+        <Field label="Categoría" required error={erroresForm.categoria}>
+          <Select
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            invalid={!!erroresForm.categoria}
+          >
+            <option value="">Selecciona...</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </Select>
         </Field>
+      </div>
+
+      <Field label="Descripción" error={erroresForm.descripcion}>
+        <Textarea
+          rows={3}
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          placeholder="Detalles del artículo..."
+          invalid={!!erroresForm.descripcion}
+        />
+      </Field>
 
         <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
           <input

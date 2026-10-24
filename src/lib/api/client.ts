@@ -1,25 +1,36 @@
+import axios from 'axios';
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-export async function fetchWithAuth(
-  endpoint: string, 
-  options: RequestInit = {}, 
-  token?: string | null
-): Promise<Response> {
-  const headers = {
-    ...options.headers,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+const api = axios.create({
+    baseURL: API_URL,
+    withCredentials: true, 
+    withXSRFToken: true,   
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+});
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include', // Asegura el envío de la cookie de refresh cuando se requiera
-  });
+// Interceptor de respuestas: Atrapa los errores 401 globalmente
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Verificamos si la petición que falló fue la comprobación de sesión (/api/user)
+            const isUserCheck = error.config?.url?.includes('/api/user');
 
-  if (response.status === 401) {
-    window.location.href = '/login';
-    throw new Error('Sesión expirada o no autorizada');
-  }
+            // Rutas donde NO queremos que un 401 nos devuelva a la fuerza al login
+            const rutasExentas = ['/login', '/register', '/forgot-password', '/reset-password'];
+            const esRutaExenta = rutasExentas.some(ruta => window.location.pathname.startsWith(ruta));
 
-  return response;
-}
+            // Solo redirigimos si NO es la revisión de usuario y NO estamos en una ruta exenta
+            if (!isUserCheck && !esRutaExenta) {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default api;

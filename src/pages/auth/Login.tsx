@@ -1,29 +1,28 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext'; // Importamos el hook del contexto
+import { login } from '@/lib/api/auth';
+import axios from 'axios';
+import { useAuth } from '@/context/AuthContext'; 
+import { useToast } from '@/context/ToastContext';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
   
   const navigate = useNavigate();
-  const { setAccessToken } = useAuth(); // Extraemos la función para guardar el token en memoria
+  // Extraemos la función para recargar al usuario
+  const { checkAuth } = useAuth(); 
 
   const validarFormulario = (): boolean => {
-    if (username.trim().length < 3) {
-      setError('El usuario debe tener al menos 3 caracteres.');
+    if (!email.includes('@')) {
+      showToast('Por favor, ingresa un correo electrónico válido.', 'error');
       return false;
     }
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
-      return false;
-    }
-    const tieneAlfanumericoEspecial = /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-    if (!tieneAlfanumericoEspecial) {
-      setError('La contraseña debe incluir al menos un número o carácter especial.');
+      showToast('La contraseña debe tener al menos 8 caracteres.', 'error');
       return false;
     }
     return true;
@@ -37,16 +36,20 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // Recibimos la respuesta que contiene { access: '...' }
-      const res = await login(username, password);
+      // 1. Iniciar sesión en Laravel
+      await login(email, password);
       
-      // Guardamos el Access Token en el estado de React
-      setAccessToken(res.access);
+      // 2. OBLIGATORIO: Forzar al contexto a buscar al usuario recién logueado
+      await checkAuth();
 
-      // Redirigimos a la ruta protegida
-      navigate('/admin/productos');
+      // 3. Redirigir a la ruta base del panel. El Dashboard se encargará del resto.
+      navigate('/admin'); 
     } catch (err: any) {
-      setError('Usuario o contraseña incorrectos. Verifica tus credenciales.');
+      if (axios.isAxiosError(err) && err.response?.status === 422) {
+         showToast('Correo o contraseña incorrectos. Verifica tus credenciales.');
+      } else {
+         showToast('Ocurrió un error al intentar conectar con el servidor.');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,14 +77,14 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-              Usuario
+              Correo Electrónico
             </label>
             <input
-              type="text"
+              type="email"
               required
-              placeholder="Ingresa tu usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="admin@sublimastudio.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 shadow-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
             />
           </div>
@@ -108,7 +111,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white shadow-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 transition-all"
+            className="w-full rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white shadow-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
           >
             {loading ? 'Validando...' : 'Iniciar Sesión'}
           </button>

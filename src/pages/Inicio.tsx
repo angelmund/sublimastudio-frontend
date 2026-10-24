@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Flame,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  Truck,
   Palette,
   Clock,
   ChevronLeft,
@@ -19,6 +17,7 @@ import {
 import type { Categoria, ProductoConCategoria } from '@/types/catalogo';
 import TarjetaProducto from '@/components/TarjetaProducto';
 import { Cargando, ErrorEstado } from '@/components/Estados';
+import axios from 'axios';
 
 function formatearPrecio(n: number): string {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -48,7 +47,11 @@ export default function Inicio() {
         setProductos(prods);
       } catch (e) {
         if (!activo) return;
-        setError(e instanceof Error ? e.message : 'No se pudo cargar el catálogo.');
+        if (axios.isAxiosError(e) && e.response) {
+          setError(e.response.data?.message || 'Error de conexión con el servidor.');
+        } else {
+          setError(e instanceof Error ? e.message : 'No se pudo cargar la información.');
+        }
       } finally {
         if (activo) setCargando(false);
       }
@@ -88,10 +91,7 @@ export default function Inicio() {
         </div>
         <div className="container-page relative grid grid-cols-1 items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
           <div className="animate-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full border border-flame-400/30 bg-flame-500/10 px-3 py-1 text-xs font-semibold text-flame-300">
-              <Sparkles className="h-3.5 w-3.5" />
-              Calidad profesional para sublimación
-            </span>
+            
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               Tus ideas,
               <br />
@@ -142,7 +142,8 @@ export default function Inicio() {
                     </span>
                   )}
                   <span className="absolute right-3 bottom-3 rounded-xl bg-flame-600 px-3 py-1.5 text-sm font-bold text-white shadow-lg">
-                    {formatearPrecio(productoActual.precio)}
+                    {/* Corrección: Mostramos el precio final para considerar descuentos */}
+                    {formatearPrecio(productoActual.precio_final || productoActual.precio || 0)}
                   </span>
                 </div>
 
@@ -155,7 +156,7 @@ export default function Inicio() {
                     <p className="text-xs text-ink-400 mt-0.5">Artículo destacado del catálogo</p>
                   </div>
                   <Link
-                    to={`/articulo/${productoActual.slug}`}
+                    to={`/articulo/${productoActual.slug || productoActual.id}`}
                     className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/10 text-white transition-all hover:bg-flame-600 hover:scale-105"
                     title="Ver detalle"
                   >
@@ -218,7 +219,6 @@ export default function Inicio() {
           {[
             { icon: Palette, titulo: 'Colores vivos', texto: 'Impresión a todo color con acabado profesional.' },
             { icon: ShieldCheck, titulo: 'Alta durabilidad', texto: 'Diseños que resisten el lavado y el uso diario.' },
-            { icon: Truck, titulo: 'Envíos rápidos', texto: 'Preparación ágil y envíos a toda la república.' },
             { icon: Clock, titulo: 'Pedidos express', texto: 'Servicio urgente disponible para fechas especiales.' },
           ].map((b) => (
             <div key={b.titulo} className="flex items-start gap-3">
