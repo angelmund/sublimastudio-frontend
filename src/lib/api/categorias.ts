@@ -28,19 +28,14 @@ export async function getCategoriasDestacadas(): Promise<Categoria[]> {
 // ==========================================
 // RUTAS ADMIN (Protegidas automáticamente por Sanctum/Breeze)
 // ==========================================
-export async function crearCategoria(formData: FormData): Promise<Categoria> {
-  // Axios envía la cookie de sesión y el token CSRF automáticamente
+export async function crearCategoria(formData: FormData): Promise<any> {
   const { data } = await api.post('/api/v1/admin/categorias', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return data;
+  return data; // Devolvemos todo para leer el 'message'
 }
 
-export async function actualizarCategoria(id: number, formData: FormData): Promise<Categoria> {
-  // Para Laravel, cuando envías FormData (archivos) en actualización, 
-  // a veces es mejor usar POST y agregar el _method: 'PATCH' dentro del formData.
+export async function actualizarCategoria(id: number, formData: FormData): Promise<any> {
   const { data } = await api.post(`/api/v1/admin/categorias/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
@@ -49,5 +44,10 @@ export async function actualizarCategoria(id: number, formData: FormData): Promi
 
 export async function eliminarCategoria(id: number): Promise<boolean> {
   await api.delete(`/api/v1/admin/categorias/${id}`);
+  return true;
+}
+
+export async function activarCategoria(id: number): Promise<boolean> {
+  await api.post(`/api/v1/admin/categorias/${id}/activar`);
   return true;
 }

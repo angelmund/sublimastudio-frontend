@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { Plus, Edit2, Trash2, FolderTree, Check, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, FolderTree, Check, X, Power } from 'lucide-react';
 import {
   getCategorias,
   crearCategoria,
   actualizarCategoria,
   eliminarCategoria,
+  activarCategoria,
 } from '@/lib/api';
+import axios from 'axios';
 import type { Categoria } from '@/types/catalogo';
 import DataTable, { type Column } from '@/components/DataTable';
 import PageHeader from '@/components/PageHeader';
@@ -17,27 +19,26 @@ import Textarea from '@/components/ui/Textarea';
 import FormModal from '@/components/ui/FormModal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { useToast } from '@/context/ToastContext';
 
 export default function AdminCategorias() {
-  // ---------- Data ----------
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const { showToast } = useToast();
+  const [erroresForm, setErroresForm] = useState<Record<string, string>>({});
 
-  // ---------- Modal form ----------
   const [modalAbierto, setModalAbierto] = useState(false);
   const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(null);
   const [guardando, setGuardando] = useState(false);
 
-  // ---------- Modal delete ----------
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
   const [eliminando, setEliminando] = useState(false);
 
-  // ---------- Campos ----------
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [disponible, setDisponible] = useState(true);
+  const [activo, setActivo] = useState(true);
   const [archivoImagen, setArchivoImagen] = useState<File | null>(null);
   const [previewImagen, setPreviewImagen] = useState<string | null>(null);
 
@@ -58,18 +59,21 @@ export default function AdminCategorias() {
     }
   }
 
+  const isActivo = (valor: any) => valor === true || valor === 1 || valor === '1' || valor === 'true';
+
   function abrirModal(c?: Categoria) {
+    setErroresForm({});
     if (c) {
       setCategoriaEditar(c);
-      setNombre(c.nombre);
+      setNombre(c.nombre || '');
       setDescripcion(c.descripcion || '');
-      setDisponible(c.disponible ?? true);
+      setActivo(isActivo(c.disponible));
       setPreviewImagen(c.imagen || null);
     } else {
       setCategoriaEditar(null);
       setNombre('');
       setDescripcion('');
-      setDisponible(true);
+      setActivo(true);
       setPreviewImagen(null);
     }
     setArchivoImagen(null);
@@ -77,38 +81,77 @@ export default function AdminCategorias() {
   }
 
   function handleSelectImagen(file: File) {
+    const limiteMB = 10;
+    const tamanoMaximoBytes = limiteMB * 1024 * 1024;
+
+    if (file.size > tamanoMaximoBytes) {
+      showToast(`La imagen es muy pesada. El tamaño máximo permitido es ${limiteMB}MB.`, 'error');
+      return;
+    }
+
     setArchivoImagen(file);
     setPreviewImagen(URL.createObjectURL(file));
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!nombre.trim()) {
-      alert('El nombre de la categoría es obligatorio.');
-      return;
-    }
 
     try {
       setGuardando(true);
+      setErroresForm({});
+      
       const formData = new FormData();
       formData.append('nombre', nombre.trim());
       formData.append('descripcion', descripcion.trim());
-      formData.append('activo', disponible ? 'true' : 'false');
+      formData.append('activo', activo ? '1' : '0');
 
       if (archivoImagen) {
         formData.append('imagen', archivoImagen);
       }
 
+      let respuesta;
       if (categoriaEditar) {
-        await actualizarCategoria(categoriaEditar.id, formData);
+        respuesta = await actualizarCategoria(categoriaEditar.id, formData);
       } else {
-        await crearCategoria(formData);
+        respuesta = await crearCategoria(formData);
       }
 
       setModalAbierto(false);
+      
+      const mensajeExito = respuesta?.message || 'Operación exitosa';
+      showToast(mensajeExito, 'success');
+      
       await cargarDatos();
+
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al guardar la categoría');
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 422) {
+          const erroresLaravel = err.response.data.errors;
+          const nuevosErrores: Record<string, string> = {};
+          Object.keys(erroresLaravel).forEach((campo) => {
+            nuevosErrores[campo] = erroresLaravel[campo][0];
+          });
+          setErroresForm(nuevosErrores);
+          showToast('Por favor corrige los errores resaltados en el formulario.', 'error');
+          return;
+        }
+
+        if (err.response?.status === 413) {
+          showToast('La imagen es demasiado pesada. Por favor sube un archivo más pequeño.', 'error');
+          return;
+        }
+
+        if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+          showToast('Error de red: El servidor rechazó la conexión o la imagen excede el límite.', 'error');
+          return;
+        }
+
+        const mensajeBackend = err.response?.data?.message;
+        showToast(mensajeBackend || `Error del servidor (${err.response?.status})`, 'error');
+        
+      } else {
+        showToast(err instanceof Error ? err.message : 'Error interno de la aplicación', 'error');
+      }
     } finally {
       setGuardando(false);
     }
@@ -120,11 +163,22 @@ export default function AdminCategorias() {
       setEliminando(true);
       await eliminarCategoria(categoriaEliminar.id);
       setCategoriaEliminar(null);
+      showToast('Categoría desactivada correctamente', 'success');
       await cargarDatos();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar la categoría');
+      showToast(err instanceof Error ? err.message : 'Error al eliminar la categoría', 'error');
     } finally {
       setEliminando(false);
+    }
+  }
+
+  async function handleActivarCategoria(id: number) {
+    try {
+      await activarCategoria(id);
+      showToast('Categoría reactivada correctamente', 'success');
+      await cargarDatos();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Error al reactivar la categoría', 'error');
     }
   }
 
@@ -136,20 +190,7 @@ export default function AdminCategorias() {
     [categorias, busqueda],
   );
 
-  // ============================================================
-  // Columnas
-  // ============================================================
   const columnas: Column<Categoria>[] = [
-    // {
-    //   key: 'id',
-    //   header: 'ID',
-    //   className: 'w-20',
-    //   render: (c) => (
-    //     <span className="font-mono text-xs font-semibold text-ink-400">
-    //       #{c.id}
-    //     </span>
-    //   ),
-    // },
     {
       key: 'categoria',
       header: 'Categoría',
@@ -185,12 +226,12 @@ export default function AdminCategorias() {
       key: 'estado',
       header: 'Estado',
       render: (c) =>
-        c.disponible ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700">
+        isActivo(c.disponible) ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success-700 px-2.5 py-0.5 text-xs font-bold text-white">
             <Check className="h-3 w-3" /> Activa
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-xs font-semibold text-ink-600">
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-700 px-2.5 py-0.5 text-xs font-bold text-white">
             <X className="h-3 w-3" /> Inactiva
           </span>
         ),
@@ -208,21 +249,29 @@ export default function AdminCategorias() {
           >
             <Edit2 className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => setCategoriaEliminar(c)}
-            className="cursor-pointer rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-            title="Eliminar"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          
+          {isActivo(c.disponible) ? (
+            <button
+              onClick={() => setCategoriaEliminar(c)}
+              className="cursor-pointer rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+              title="Desactivar"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          ) : (
+            <button 
+              onClick={() => handleActivarCategoria(c.id)} 
+              className="cursor-pointer rounded-lg p-2 text-emerald-500 transition-colors hover:bg-emerald-50 hover:text-emerald-700" 
+              title="Reactivar"
+            >
+              <Power className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ),
     },
   ];
 
-  // ============================================================
-  // Render
-  // ============================================================
   return (
     <div className="mx-auto w-full max-w-10xl space-y-8">
       <PageHeader
@@ -230,7 +279,6 @@ export default function AdminCategorias() {
         subtitle="Organiza los tipos de artículos en tu catálogo."
       />
 
-      {/* Buscador + botón */}
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <SearchInput
           value={busqueda}
@@ -257,7 +305,6 @@ export default function AdminCategorias() {
         resetKey={busqueda}
       />
 
-      {/* Modal crear/editar */}
       <FormModal
         open={modalAbierto}
         onClose={() => setModalAbierto(false)}
@@ -272,42 +319,43 @@ export default function AdminCategorias() {
           fileName={archivoImagen?.name}
           onSelect={handleSelectImagen}
         />
+        {erroresForm.imagen && <p className="mt-1 text-xs font-medium text-red-600">{erroresForm.imagen}</p>}
 
-        <Field label="Nombre" required>
+        <Field label="Nombre" required error={erroresForm.nombre}>
           <Input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Ej. Tazas, Textiles, Promocionales"
-            required
+            invalid={!!erroresForm.nombre}
           />
         </Field>
 
-        <Field label="Descripción">
+        <Field label="Descripción" error={erroresForm.descripcion}>
           <Textarea
             rows={3}
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             placeholder="Detalles sobre esta categoría de productos..."
+            invalid={!!erroresForm.descripcion}
           />
         </Field>
 
         <label className="flex items-center gap-2 pt-1 text-sm font-medium text-ink-700">
           <input
             type="checkbox"
-            checked={disponible}
-            onChange={(e) => setDisponible(e.target.checked)}
+            checked={activo}
+            onChange={(e) => setActivo(e.target.checked)}
             className="h-4 w-4 rounded border-ink-300 text-flame-600 focus:ring-flame-500"
           />
           Categoría Activa
         </label>
       </FormModal>
 
-      {/* Confirm delete */}
       <ConfirmDialog
         open={!!categoriaEliminar}
-        title="Eliminar categoría"
-        message={`¿Seguro que quieres eliminar "${categoriaEliminar?.nombre}"? Los productos asociados podrían quedar sin categoría.`}
-        confirmLabel="Sí, eliminar"
+        title="Desactivar categoría"
+        message={`¿Seguro que quieres desactivar "${categoriaEliminar?.nombre}"? Puede volver a activar la categoría más tarde.`}
+        confirmLabel="Sí, desactivar"
         loading={eliminando}
         onConfirm={confirmarEliminar}
         onCancel={() => setCategoriaEliminar(null)}

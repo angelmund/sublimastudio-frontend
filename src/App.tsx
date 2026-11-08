@@ -15,6 +15,7 @@ import { AdminLayout } from '@/components/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminProductos from '@/pages/admin/AdminProductos';
 import AdminCategoria from '@/pages/admin/AdminCategorias';
+import AdminEstatus_venta from '@/pages/admin/AdminEstatus_venta';
 import Miscompras from '@/pages/admin/MisCompras';
 import AdminUsuarios from '@/pages/admin/AdminUsuarios';
 import Login from '@/pages/auth/Login';
@@ -38,7 +39,7 @@ function ScrollToTop() {
 
 function AppContent() {
   const location = useLocation();
-  const esVistaLimpia = location.pathname.startsWith('/admin') || ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname);
+  const esVistaLimpia = location.pathname.startsWith('/admin') || location.pathname.startsWith('/reset-password') || ['/login', '/register', '/verify-email', '/forgot-password'].includes(location.pathname);
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-slate-900 font-sans antialiased">
@@ -76,6 +77,7 @@ function AppContent() {
               <Route element={<ProtectedRoute requiereAdmin={true} />}>
                     <Route path="productos" element={<AdminProductos />} />
                     <Route path="categorias" element={<AdminCategoria />} />
+                    <Route path="estatus-ventas" element={<AdminEstatus_venta />} />
                     <Route path="usuarios" element={<AdminUsuarios />} />
                     <Route path="pedidos" element={<div className="p-6 text-xl font-bold">Gestión de Pedidos</div>}/>
                     </Route>

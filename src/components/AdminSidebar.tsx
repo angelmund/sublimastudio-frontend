@@ -5,6 +5,8 @@ import {
   Package,
   FolderTree,
   ShoppingBag,
+  ShoppingCart,
+  ChartBar,
   LayoutDashboard,
   ExternalLink,
   LogOut,
@@ -23,12 +25,13 @@ const MENU_ITEMS = [
   { to: '/admin',             label: 'Dashboard',  icon: LayoutDashboard, roles: ['admin'] },
   { to: '/admin/productos',   label: 'Productos',  icon: Package,         roles: ['admin'] },
   { to: '/admin/categorias',  label: 'Categorías', icon: FolderTree,      roles: ['admin'] },
-  { to: '/admin/pedidos',     label: 'Pedidos',    icon: ShoppingBag,     roles: ['admin', 'vendedor'] }, // Ejemplo de multi-rol
+  { to: '/admin/pedidos',     label: 'Pedidos',    icon: ShoppingCart,     roles: ['admin', 'vendedor'] }, // Ejemplo de multi-rol
+  { to: '/admin/estatus-ventas',     label: 'Estatus de Ventas',    icon: ChartBar,     roles: ['admin'] }, // Ejemplo de multi-rol
   { to: '/admin/usuarios',    label: 'Usuarios',   icon: UsersRound,      roles: ['admin'] },
 
   // --- Rutas de Cliente ---
   { to: '/admin',             label: 'Mi Perfil',   icon: UserIcon,       roles: ['cliente'] },
-  { to: '/admin/compras',     label: 'Mis Compras', icon: ShoppingBag,    roles: ['cliente'] },
+  { to: '/admin/compras',     label: 'Mis Compras', icon: ShoppingCart,    roles: ['cliente'] },
 ];
 
 interface AdminSidebarProps {

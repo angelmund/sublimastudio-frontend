@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '@/lib/api/auth'; 
+import { useToast } from '@/context/ToastContext';
 import axios from 'axios';
 
 export default function Register() {
@@ -9,22 +10,22 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   
-  const [error, setError] = useState<string | null>(null);
+  // const [error, showToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
+    const { showToast } = useToast();
   const navigate = useNavigate();
 
   const validarFormulario = (): boolean => {
     if (name.trim().length < 3) {
-      setError('El nombre debe tener al menos 3 caracteres.');
+      showToast('El nombre debe tener al menos 3 caracteres.');
       return false;
     }
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+      showToast('La contraseña debe tener al menos 8 caracteres.');
       return false;
     }
     if (password !== passwordConfirmation) {
-      setError('Las contraseñas no coinciden.');
+      showToast('Las contraseñas no coinciden.');
       return false;
     }
     return true;
@@ -32,7 +33,7 @@ export default function Register() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
+    showToast(null);
 
     if (!validarFormulario()) return;
 
@@ -54,9 +55,9 @@ export default function Register() {
         // Laravel devuelve los errores de validación (ej. el correo ya existe)
         const mensajesErrores = err.response.data.errors;
         const primerError = Object.values(mensajesErrores)[0] as string[];
-        setError(primerError[0] || 'Error al validar los datos.');
+        showToast(primerError[0] || 'Error al validar los datos.');
       } else {
-         setError('Ocurrió un error al intentar registrar la cuenta.');
+         showToast('Ocurrió un error al intentar registrar la cuenta.', 'error');
       }
     } finally {
       setLoading(false);

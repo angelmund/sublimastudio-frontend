@@ -46,7 +46,11 @@ export default function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button 
+            variant="secondary" 
+            onClick={onCancel}
+            disabled={loading}
+          >
             {cancelLabel}
           </Button>
         </div>

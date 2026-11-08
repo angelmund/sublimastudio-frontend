@@ -20,7 +20,7 @@ export default defineConfig({
       usePolling: true, // Forzar la detección de cambios dentro del volumen de Docker
     },
     hmr: {
-      host: 'localhost',
+      host: '127.0.0.1',
     },
   },
 });

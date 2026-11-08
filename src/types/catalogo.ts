@@ -26,6 +26,11 @@ export interface ProductoConCategoria {
   categoria?: Categoria;
   atributos?: any[];
 }
-
+export interface Estatus_venta {
+  id: number;
+  nombre: string;
+  color: string;
+  activo?: boolean;
+}
 // Exportamos también Producto para componer componentes antiguos
 export type Producto = ProductoConCategoria;

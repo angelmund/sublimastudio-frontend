@@ -46,9 +46,9 @@ export default function Login() {
       navigate('/admin'); 
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response?.status === 422) {
-         showToast('Correo o contraseña incorrectos. Verifica tus credenciales.');
+         showToast('Correo o contraseña incorrectos. Verifica tus credenciales.', 'error');
       } else {
-         showToast('Ocurrió un error al intentar conectar con el servidor.');
+         showToast('Ocurrió un error al intentar conectar con el servidor.', 'error');
       }
     } finally {
       setLoading(false);

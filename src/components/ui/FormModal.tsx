@@ -39,7 +39,12 @@ export default function FormModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-ink-400 hover:bg-ink-50 cursor-pointer"
+            disabled={submitting}
+            className={`rounded-lg p-1 text-ink-400 ${
+              submitting 
+                ? 'cursor-not-allowed opacity-50' 
+                : 'hover:bg-ink-50 cursor-pointer'
+            }`}
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -53,7 +58,14 @@ export default function FormModal({
             <Button type="submit" loading={submitting} className="flex-1">
               {submitLabel}
             </Button>
-            <Button type="button" variant="secondary" onClick={onClose}>
+            
+            {/* Bloqueamos el botón secundario si el formulario se está enviando */}
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={onClose}
+              disabled={submitting}
+            >
               {cancelLabel}
             </Button>
           </div>
