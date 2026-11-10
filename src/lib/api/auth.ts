@@ -7,11 +7,19 @@ export interface RegisterData {
   password_confirmation: string; 
 }
 
+const getCsrfToken = async () => {
+  await api.get('/sanctum/csrf-cookie');
+  
+  const res = await api.get('/api/csrf-token');
+
+  api.defaults.headers.common['X-CSRF-TOKEN'] = res.data.token;
+};
+
 // ==========================================
 // 1. INICIO Y CIERRE DE SESIÓN
 // ==========================================
 export async function login(email: string, password: string): Promise<any> {
-  await api.get('/sanctum/csrf-cookie');
+  await getCsrfToken();
   const res = await api.post('/login', { email, password });
   return res.data;
 }
@@ -24,7 +32,7 @@ export async function logout(): Promise<void> {
 // 2. REGISTRO DE USUARIO
 // ==========================================
 export async function register(data: RegisterData): Promise<any> {
-  await api.get('/sanctum/csrf-cookie');
+  await getCsrfToken();
   const res = await api.post('/register', data);
   return res.data;
 }
@@ -35,7 +43,7 @@ export async function register(data: RegisterData): Promise<any> {
 
 // Para cuando el usuario pide que le vuelvan a enviar el correo de verificación
 export async function resendVerificationEmail(): Promise<any> {
-  await api.get('/sanctum/csrf-cookie');
+  await getCsrfToken();
   const res = await api.post('/email/verification-notification');
   return res.data;
 }
@@ -53,7 +61,7 @@ export async function verifyEmail(signedUrl: string): Promise<any> {
 
 // Paso 1: Enviar correo de recuperación
 export async function requestPasswordReset(email: string): Promise<any> {
-  await api.get('/sanctum/csrf-cookie');
+  await getCsrfToken();
   const res = await api.post('/forgot-password', { email }); 
   return res.data;
 }
@@ -65,7 +73,7 @@ export async function confirmPasswordReset(data: {
   password: string;
   password_confirmation: string;
 }): Promise<any> {
-  await api.get('/sanctum/csrf-cookie');
+  await getCsrfToken();
   const res = await api.post('/reset-password', data);
   return res.data;
 }
