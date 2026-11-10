@@ -9,10 +9,6 @@ export interface RegisterData {
 
 const getCsrfToken = async () => {
   await api.get('/sanctum/csrf-cookie');
-  
-  const res = await api.get('/api/csrf-token');
-
-  api.defaults.headers.common['X-CSRF-TOKEN'] = res.data.token;
 };
 
 // ==========================================
