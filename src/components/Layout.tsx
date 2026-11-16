@@ -46,6 +46,12 @@ export function Navbar() {
           >
             Pedir cotización
           </Link>
+          <Link
+            to="/personalizar"
+            className="ml-2 rounded-lg bg-flame-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-flame-700 hover:shadow-md"
+          >
+            Personalizar
+          </Link>
         </nav>
 
         {/* Móvil: botón */}

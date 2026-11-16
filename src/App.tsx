@@ -5,6 +5,7 @@ import Inicio from '@/pages/Inicio';
 import Articulos from '@/pages/Articulos';
 import ArticuloDetalle from '@/pages/ArticuloDetalle';
 import SobreNosotros from '@/pages/SobreNosotros';
+import Personalizar from '@/pages/Personalizador';
 import Contacto from '@/pages/Contacto';
 import NoEncontrado from '@/pages/NoEncontrado';
 import { GuestRoute } from '@/components/GuestRoute';
@@ -52,6 +53,7 @@ function AppContent() {
           <Route path="/articulos" element={<Articulos />} />
           <Route path="/articulo/:slug" element={<ArticuloDetalle />} />
           <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+          <Route path="/personalizar" element={<Personalizar />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
