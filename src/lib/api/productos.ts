@@ -2,7 +2,6 @@ import api from './client';
 import type { ProductoConCategoria } from '@/types/catalogo';
 
 function normalizarProducto(p: any): ProductoConCategoria {
-  // Si nos mandaron el objeto completo por accidente, extraemos el artículo
   if (p && p.articulo) {
     p = p.articulo;
   }
@@ -24,16 +23,17 @@ function normalizarProducto(p: any): ProductoConCategoria {
 
   const stockReal = p.stock !== undefined ? parseInt(p.stock, 10) : (p.activo ? 10 : 0);
 
+  // Extraemos limpiamente el ID de la categoría y su nombre
   const catId = p.categoria?.id ?? p.categoria_id ?? p.id_categoria ?? (typeof p.categoria !== 'object' ? p.categoria : null);
   const catNombre = p.categoria?.nombre ?? p.categoria_nombre ?? 'Categoría';
 
   return {
     id: p.id,
-    slug: p.id?.toString() || '', // PROTEGIDO contra undefined
+    slug: p.id?.toString() || '',
     nombre: p.nombre,
     descripcion: p.descripcion,
     precio: precioBase,
-    precio_oferta: precioDescuento,
+    precio_descuento: precioDescuento,
     precio_final: precioFinalCalculado,
     stock: stockReal, 
     imagen: p.imagen 
@@ -48,7 +48,7 @@ function normalizarProducto(p: any): ProductoConCategoria {
       ? {
           id: parseInt(catId, 10),
           nombre: catNombre,
-          slug: catId?.toString() || '', // PROTEGIDO contra undefined
+          slug: catId.toString(),
         }
       : undefined,
     atributos: p.atributos || [],
@@ -92,8 +92,6 @@ export async function crearProducto(formData: FormData): Promise<any> {
   const { data } = await api.post('/api/v1/admin/articulos', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  
-  // Como solo queremos devolver la data pura a handleSubmit para leer el 'message', devolvemos data:
   return data; 
 }
 
@@ -101,8 +99,6 @@ export async function actualizarProducto(id: number, formData: FormData): Promis
   const { data } = await api.post(`/api/v1/admin/articulos/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  
-  // Devolvemos data pura (que contiene 'status', 'message' y 'articulo')
   return data;
 }
 

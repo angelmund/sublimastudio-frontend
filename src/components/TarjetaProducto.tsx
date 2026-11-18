@@ -75,9 +75,20 @@ export default function TarjetaProducto({ producto }: { producto: any }) {
         )}
 
         <div className="mt-auto flex items-baseline gap-2 pt-3">
-          <span className="text-lg font-bold text-ink-900">
-            {formatearPrecio(producto.precio_final || producto.precio || 0)}
+          {producto.precio_descuento && Number(producto.precio_descuento) > 0 ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink-400 line-through">
+              {formatearPrecio(producto.precio)}
+            </span>
+            <span className="font-bold text-flame-600">
+              {formatearPrecio(producto.precio_descuento)} MXN
+            </span>
+          </div>
+        ) : (
+          <span className="font-bold text-ink-900">
+            {formatearPrecio(producto.precio_final || producto.precio)} MXN
           </span>
+        )}
         </div>
       </div>
     </Link>

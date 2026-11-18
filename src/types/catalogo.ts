@@ -15,11 +15,11 @@ export interface ProductoConCategoria {
   descripcion?: string;
   precio: number;
   precio_base?: number;
-  precio_oferta?: number | null;
+  precio_descuento?: number | null;
   precio_final: number;
   stock: number;
   imagen?: string;
-  disponible: boolean;
+  activo: boolean;
   material?: string;
   medidas?: string;
   created_at?: string;

@@ -49,22 +49,29 @@ export default function Articulos() {
     };
   }, []);
 
-  function setCategoria(slug: string) {
+  function setCategoria(catId: string) {
     const next = new URLSearchParams(params);
-    if (slug === 'todas') next.delete('categoria');
-    else next.set('categoria', slug);
+    if (catId === 'todas') next.delete('categoria');
+    else next.set('categoria', catId);
     setParams(next, { replace: true });
     setFiltrosAbiertos(false);
   }
 
   const productosFiltrados = useMemo(() => {
     let lista = [...productos];
+    
+    // Filtrado exacto comparando el ID de la categoría del producto con la categoría activa
     if (categoriaActiva !== 'todas') {
-      lista = lista.filter((p) => p.categoria?.slug === categoriaActiva);
+      lista = lista.filter((p) => {
+        const pCatId = p.categoria?.id?.toString();
+        return pCatId === categoriaActiva;
+      });
     }
+
     if (soloDisponibles) {
-      lista = lista.filter((p) => p.disponible);
+      lista = lista.filter((p) => p.stock > 0 || p.activo);
     }
+
     const q = busqueda.trim().toLowerCase();
     if (q) {
       lista = lista.filter(
@@ -74,7 +81,8 @@ export default function Articulos() {
           (p.material?.toLowerCase().includes(q) ?? false)
       );
     }
-   switch (orden) {
+
+    switch (orden) {
       case 'precio-asc':
         lista.sort((a, b) => a.precio_final - b.precio_final);
         break;
@@ -93,7 +101,7 @@ export default function Articulos() {
   const categoriaNombre =
     categoriaActiva === 'todas'
       ? 'Todos los artículos'
-      : categorias.find((c) => c.slug === categoriaActiva)?.nombre ?? 'Artículos';
+      : categorias.find((c) => c.id.toString() === categoriaActiva)?.nombre ?? 'Artículos';
 
   const PanelFiltros = (
     <div className="space-y-6">
@@ -115,21 +123,26 @@ export default function Articulos() {
               Todas
             </button>
           </li>
-          {categorias.map((c) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                onClick={() => setCategoria(c.slug)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                  categoriaActiva === c.slug
-                    ? 'bg-flame-50 text-flame-700'
-                    : 'text-ink-600 hover:bg-ink-50'
-                }`}
-              >
-                {c.nombre}
-              </button>
-            </li>
-          ))}
+          {categorias.map((c) => {
+            // CORREGIDO: Usamos directamente el ID numérico de la categoría como identificador seguro
+            const idStr = c.id.toString();
+            const esActiva = categoriaActiva === idStr;
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => setCategoria(idStr)}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    esActiva
+                      ? 'bg-flame-50 text-flame-700'
+                      : 'text-ink-600 hover:bg-ink-50'
+                  }`}
+                >
+                  {c.nombre}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
@@ -152,7 +165,6 @@ export default function Articulos() {
 
   return (
     <div className="container-page py-10">
-      {/* Breadcrumb + título */}
       <nav className="flex items-center gap-1 text-sm text-ink-400">
         <Link to="/" className="hover:text-flame-600">Inicio</Link>
         <ChevronRight className="h-4 w-4" />
@@ -163,7 +175,6 @@ export default function Articulos() {
         Explora nuestra selección de artículos listos para personalizar con sublimación.
       </p>
 
-      {/* Barra de herramientas */}
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" />
@@ -198,14 +209,12 @@ export default function Articulos() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
-        {/* Filtros escritorio */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-2xl border border-ink-100 bg-white p-5 shadow-sm">
             {PanelFiltros}
           </div>
         </aside>
 
-        {/* Resultados */}
         <div>
           {cargando ? (
             <Cargando />
@@ -229,7 +238,6 @@ export default function Articulos() {
         </div>
       </div>
 
-      {/* Drawer de filtros móvil */}
       {filtrosAbiertos && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div

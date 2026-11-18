@@ -41,6 +41,7 @@ export default function AdminProductos() {
 
   const [nombre, setNombre] = useState('');
   const [precio, setPrecio] = useState('');
+  const [precioDescuento, setPrecioDescuento] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [activo, setactivo] = useState(true);
@@ -73,6 +74,7 @@ export default function AdminProductos() {
       setProductoEditar(p);
       setNombre(p.nombre || '');
       setPrecio((p.precio_base || p.precio || 0).toString());
+      setPrecioDescuento(p.precio_descuento !== null && p.precio_descuento !== undefined ? p.precio_descuento.toString() : '');
       setCategoriaId(p.categoria?.id?.toString() || p.categoria_id?.toString() || '');
       setDescripcion(p.descripcion || '');
       setactivo(isActivo(p.activo));
@@ -81,6 +83,7 @@ export default function AdminProductos() {
       setProductoEditar(null);
       setNombre('');
       setPrecio('');
+      setPrecioDescuento('');
       setCategoriaId('');
       setDescripcion('');
       setactivo(true);
@@ -106,9 +109,14 @@ export default function AdminProductos() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     
-    
     if (Number(precio) <= 0) {
-        showToast('El precio debe ser mayor a $0', 'error');
+        showToast('El precio base debe ser mayor a $0', 'error');
+        return;
+    }
+
+    // Validación opcional lógica: si hay descuento, que no sea mayor o igual al precio base
+    if (precioDescuento !== '' && Number(precioDescuento) >= Number(precio)) {
+        showToast('El precio con descuento debe ser menor al precio base', 'error');
         return;
     }
 
@@ -119,6 +127,9 @@ export default function AdminProductos() {
       const formData = new FormData();
       formData.append('nombre', nombre.trim());
       formData.append('precio_base', precio);
+      if (precioDescuento !== '') {
+        formData.append('precio_descuento', precioDescuento);
+      }
       formData.append('categoria', categoriaId);
       formData.append('descripcion', descripcion.trim());
       formData.append('activo', activo ? '1' : '0');
@@ -187,7 +198,6 @@ export default function AdminProductos() {
       setEliminando(false);
     }
   }
-
   
   async function handleActivarProducto(id: number) {
     try {
@@ -229,7 +239,14 @@ export default function AdminProductos() {
     {
       key: 'precio',
       header: 'Precio',
-      render: (p) => <span className="font-semibold text-ink-900">${Number(p.precio_base || p.precio || 0).toFixed(2)} MXN</span>,
+      render: (p) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-ink-900">${Number(p.precio_base || p.precio || 0).toFixed(2)} MXN</span>
+          {p.precio_descuento && Number(p.precio_descuento) > 0 && (
+            <span className="text-xs text-emerald-600 font-medium">Desc: ${Number(p.precio_descuento).toFixed(2)}</span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'estado',
@@ -254,7 +271,6 @@ export default function AdminProductos() {
             <Edit2 className="h-4 w-4" />
           </button>
           
-          {/* Mostramos el botón de Eliminar si está activo, o el de Reactivar si está inactivo */}
           {isActivo(p.activo) ? (
             <button onClick={() => setProductoEliminar(p)} className="rounded-lg p-2 text-red-500 hover:bg-red-50 hover:text-red-700 cursor-pointer" title="Desactivar">
               <Trash2 className="h-4 w-4" />
@@ -293,24 +309,33 @@ export default function AdminProductos() {
       <FormModal open={modalAbierto} onClose={() => setModalAbierto(false)} title={productoEditar ? 'Editar Producto' : 'Nuevo Producto'} onSubmit={handleSubmit} submitting={guardando} submitLabel={productoEditar ? 'Guardar cambios' : 'Crear producto'}>
         <ImageUpload label="Imagen de Muestra" previewUrl={previewImagen} fileName={archivoImagen?.name} onSelect={handleSelectImagen} />
         {erroresForm.imagen_muestra && <p className="mt-1 text-xs font-medium text-red-600">{erroresForm.imagen_muestra}</p>}
+        
         <Field label="Nombre" required error={erroresForm.nombre}>
           <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Taza Mágica 11oz" invalid={!!erroresForm.nombre} />
         </Field>
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Precio Base (MXN)" required error={erroresForm.precio_base}>
-            {/* AQUÍ LIMITAMOS EL INPUT A MÍNIMO 0.01 */}
             <Input type="number" step="0.01" min="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="0.00" invalid={!!erroresForm.precio_base} />
           </Field>
-          <Field label="Categoría" required error={erroresForm.categoria}>
-            <Select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} invalid={!!erroresForm.categoria}>
-              <option value="">Selecciona...</option>
-              {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </Select>
+          
+          {/* NUEVO CAMPO EN EL MODAL */}
+          <Field label="Precio con Descuento (MXN)" error={erroresForm.precio_descuento}>
+            <Input type="number" step="0.01" min="0" value={precioDescuento} onChange={(e) => setPrecioDescuento(e.target.value)} placeholder="0.00 (Opcional)" invalid={!!erroresForm.precio_descuento} />
           </Field>
         </div>
+
+        <Field label="Categoría" required error={erroresForm.categoria}>
+          <Select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} invalid={!!erroresForm.categoria}>
+            <option value="">Selecciona...</option>
+            {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          </Select>
+        </Field>
+
         <Field label="Descripción" error={erroresForm.descripcion}>
           <Textarea rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Detalles del artículo..." invalid={!!erroresForm.descripcion} />
         </Field>
+
         <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
           <input type="checkbox" checked={activo} onChange={(e) => setactivo(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-flame-600 focus:ring-flame-500" />
           Disponible para venta (Activo)

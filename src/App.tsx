@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Navbar, Footer } from '@/components/Layout';
+import { Navbar } from '@/components/Layout';
+import { Footer } from '@/components/Footer';
 import Inicio from '@/pages/Inicio';
 import Articulos from '@/pages/Articulos';
 import ArticuloDetalle from '@/pages/ArticuloDetalle';

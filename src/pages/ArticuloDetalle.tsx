@@ -80,8 +80,8 @@ export default function ArticuloDetalle() {
     );
   }
 
-  const enOferta = producto.precio_oferta != null && producto.precio_oferta < producto.precio;
-  const precioFinal = producto.precio_oferta ?? producto.precio;
+  const enOferta = producto.precio_descuento != null && producto.precio_descuento < producto.precio;
+  const precioFinal = producto.precio_descuento ?? producto.precio;
 
   return (
     <div className="container-page py-10">
